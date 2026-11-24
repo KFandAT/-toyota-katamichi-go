@@ -2,7 +2,7 @@ name: Toyota Katamichi GO Monitor
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "2-57/5 * * * *"
       timezone: "Asia/Tokyo"
 
   workflow_dispatch:
