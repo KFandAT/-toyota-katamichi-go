@@ -2,15 +2,14 @@ name: Toyota Katamichi GO Monitor
 
 on:
   schedule:
-    - cron: "3-58/5 * * * *"
+    - cron: "*/5 * * * *"
+      timezone: "Asia/Tokyo"
 
   workflow_dispatch:
 
-# GitHubへの書き込み権限
 permissions:
   contents: write
 
-# 同時実行によるstate.jsonの競合を防止
 concurrency:
   group: toyota-katamichi-monitor
   cancel-in-progress: false
