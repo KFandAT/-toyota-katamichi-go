@@ -226,52 +226,76 @@ def save_state(items: list[dict[str, str]]) -> None:
     )
 
 
-def send_discord(payload: dict) -> None:
-    webhook = os.getenv("DISCORD_WEBHOOK_URL", "").strip()
-    if not webhook:
-        raise RuntimeError("DISCORD_WEBHOOK_URL is not set")
+def send_line(message: str) -> None:
 
-    response = requests.post(webhook, json=payload, timeout=30)
-    if response.status_code == 429:
-        try:
-            retry_after = float(response.json().get("retry_after", 1))
-        except Exception:
-            retry_after = 1
-        time.sleep(min(retry_after, 10))
-        response = requests.post(webhook, json=payload, timeout=30)
+    token = os.getenv("LINE_CHANNEL_ACCESS_TOKEN", "").strip()
+    user_id = os.getenv("LINE_USER_ID", "").strip()
+
+    if not token:
+        raise RuntimeError("LINE_CHANNEL_ACCESS_TOKEN is not set")
+
+    if not user_id:
+        raise RuntimeError("LINE_USER_ID is not set")
+
+    url = "https://api.line.me/v2/bot/message/push"
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {token}"
+    }
+
+    payload = {
+        "to": user_id,
+        "messages": [
+            {
+                "type": "text",
+                "text": message[:5000]
+            }
+        ]
+    }
+
+    response = requests.post(
+        url,
+        headers=headers,
+        json=payload,
+        timeout=30
+    )
+
     response.raise_for_status()
+
+    print("LINE notification sent.")
 
 
 def notify_started(count: int) -> None:
-    send_discord(
-        {
-            "content": (
-                "✅ **トヨタ 片道GO! の監視を開始しました**\n"
-                f"現在の条件に一致する掲載: **{count}件**\n"
-                "次回以降、新しく追加された掲載だけ通知します。"
-            )
-        }
+
+    message = (
+        "✅ トヨタ 片道GO! の監視を開始しました。\n\n"
+        f"現在の条件に一致する掲載：{count}件\n\n"
+        "次回以降、新しく追加された掲載を"
+        "LINEに通知します。"
     )
+
+    send_line(message)
 
 
 def notify_listing(item: dict[str, str]) -> None:
-    embed = {
-        "title": "🚗 片道GO! 新着",
-        "url": SOURCE_URL,
-        "description": f"**{item['start']}**\n➡️ **{item['return']}**",
-        "fields": [
-            {"name": "車種", "value": item["car"][:1024], "inline": False},
-            {"name": "出発期間", "value": item["period"][:1024], "inline": False},
-            {"name": "車両条件", "value": item["conditions"][:1024], "inline": False},
-            {
-                "name": "予約電話番号",
-                "value": f"{item['contact']}\n**{item['phone']}**"[:1024],
-                "inline": False,
-            },
-        ],
-        "footer": {"text": "トヨタ 片道GO! 自動監視"},
-    }
-    send_discord({"embeds": [embed]})
+
+    message = (
+        "🚗 トヨタ 片道GO! 新着掲載\n\n"
+        "━━━━━━━━━━━━━━\n"
+        f"📍 出発店舗\n{item['start']}\n\n"
+        f"➡️ 返却店舗\n{item['return']}\n\n"
+        f"🚘 車種\n{item['car']}\n\n"
+        f"📅 出発期間\n{item['period']}\n\n"
+        f"📋 車両条件\n{item['conditions']}\n\n"
+        f"📞 予約電話番号\n{item['contact']}\n"
+        f"{item['phone']}\n\n"
+        "━━━━━━━━━━━━━━\n"
+        "🔗 公式サイト\n"
+        "https://cp.toyota.jp/rentacar/"
+    )
+
+    send_line(message)
 
 
 def main() -> None:
