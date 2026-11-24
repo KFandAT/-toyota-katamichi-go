@@ -1,4 +1,3 @@
-```yaml
 name: Toyota Katamichi GO Monitor
 
 on:
@@ -60,4 +59,3 @@ jobs:
           git commit -m "Update vehicle monitoring state"
 
           git push origin HEAD:${GITHUB_REF_NAME}
-```
