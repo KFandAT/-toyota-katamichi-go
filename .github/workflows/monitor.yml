@@ -56,6 +56,13 @@ jobs:
             exit 0
           fi
 
-          git commit -m "Update vehicle monitoring state"
+          git commit -m "update state"
 
-          git push origin HEAD:${GITHUB_REF_NAME}
+          # GitHub側の最新変更を取得
+          git fetch origin main
+
+          # 最新のmainに今回の変更を反映
+          git rebase origin/main
+
+          # GitHubへ保存
+          git push origin HEAD:main
