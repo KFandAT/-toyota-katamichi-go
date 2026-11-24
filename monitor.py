@@ -254,6 +254,8 @@ def send_line(message: str) -> None:
         ]
     }
 
+    print("[LINE] Sending notification...")
+
     response = requests.post(
         url,
         headers=headers,
@@ -261,9 +263,12 @@ def send_line(message: str) -> None:
         timeout=30
     )
 
+    print("[LINE] HTTP Status:", response.status_code)
+    print("[LINE] Response:", response.text)
+
     response.raise_for_status()
 
-    print("LINE notification sent.")
+    print("[LINE] Notification sent successfully.")
 
 
 def notify_started(count: int) -> None:
