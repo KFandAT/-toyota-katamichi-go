@@ -17,21 +17,38 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
+      # リポジトリの取得
       - name: Checkout
-        uses: actions/checkout@v5
+        id: checkout
+        uses: actions/checkout@v6
         with:
-          ref: ${{ github.ref_name }}
+          ref: main
 
+      # Python環境の構築
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+          cache: "pip"
 
+      # ライブラリのインストール
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
+      # 実行情報の表示
+      - name: Show trigger information
+        run: |
+          echo "Event: ${{ github.event_name }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Branch: ${{ github.ref_name }}"
+          echo "Schedule: ${{ github.event.schedule }}"
+
+      # 片道GO!の監視
       - name: Check Toyota Katamichi GO
         env:
           LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
@@ -43,7 +60,9 @@ jobs:
 
         run: python monitor.py
 
+      # state.jsonの保存
       - name: Save state
+        if: always() && steps.checkout.outcome == 'success'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -55,13 +74,8 @@ jobs:
             exit 0
           fi
 
-          git commit -m "update state"
+          git commit -m "Update monitoring state"
 
-          # GitHub側の最新変更を取得
           git fetch origin main
-
-          # 最新のmainに今回の変更を反映
           git rebase origin/main
-
-          # GitHubへ保存
           git push origin HEAD:main
